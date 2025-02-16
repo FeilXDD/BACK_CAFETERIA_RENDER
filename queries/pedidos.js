@@ -1,73 +1,48 @@
 const db = require('../config/database');
 
 // Crear un nuevo pedido
-const crearPedido = (clienteId) => {
-  return new Promise((resolve, reject) => {
-    db.run(
-      'INSERT INTO Pedidos (clienteId) VALUES (?)',
-      [clienteId],
-      function (err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(this.lastID);
-        }
-      }
+const crearPedido = async (clienteId) => {
+  try {
+    const { rows } = await db.query(
+      'INSERT INTO Pedidos (clienteId) VALUES ($1) RETURNING id',
+      [clienteId]
     );
-  });
+    return rows[0].id;
+  } catch (error) {
+    throw error;
+  }
 };
 
 // Agregar detalles del pedido
-const agregarDetallesPedido = (pedidoId, detalles) => {
-  return new Promise((resolve, reject) => {
-    const stmt = db.prepare(
-      'INSERT INTO DetallesPedidos (pedidoId, productoId, cantidad) VALUES (?, ?, ?)'
+const agregarDetallesPedido = async (pedidoId, detalles) => {
+  try {
+    const values = detalles.map(({ productoId, cantidad }) => [pedidoId, productoId, cantidad]);
+    await db.query(
+      'INSERT INTO DetallesPedidos (pedidoId, productoId, cantidad) VALUES ($1, $2, $3)',
+      values.flat()
     );
-    detalles.forEach(({ productoId, cantidad }) => {
-      stmt.run([pedidoId, productoId, cantidad], (err) => {
-        if (err) {
-          reject(err);
-        }
-      });
-    });
-    stmt.finalize(() => resolve());
-  });
+  } catch (error) {
+    throw error;
+  }
 };
 
-// Obtener todos los pedidos pendientes
-const obtenerPedidosPendientes = () => {
-  return new Promise((resolve, reject) => {
-    db.all(
-      `SELECT p.id, p.clienteId, p.estado, p.fechaCreacion 
-       FROM Pedidos p
-       WHERE p.estado = 'pendiente'`,
-      [],
-      (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
-        }
-      }
-    );
-  });
+// Obtener pedidos pendientes
+const obtenerPedidosPendientes = async () => {
+  try {
+    const { rows } = await db.query('SELECT * FROM Pedidos WHERE estado = $1', ['pendiente']);
+    return rows;
+  } catch (error) {
+    throw error;
+  }
 };
 
 // Marcar pedido como completado
-const marcarPedidoComoCompletado = (pedidoId) => {
-  return new Promise((resolve, reject) => {
-    db.run(
-      'UPDATE Pedidos SET estado = "completado" WHERE id = ?',
-      [pedidoId],
-      (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      }
-    );
-  });
+const marcarPedidoComoCompletado = async (pedidoId) => {
+  try {
+    await db.query('UPDATE Pedidos SET estado = $1 WHERE id = $2', ['completado', pedidoId]);
+  } catch (error) {
+    throw error;
+  }
 };
 
 module.exports = {

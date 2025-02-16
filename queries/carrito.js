@@ -1,53 +1,40 @@
 const db = require('../config/database');
 
 // Agregar producto al carrito
-const agregarProductoAlCarrito = (clienteId, productoId, cantidad) => {
-  return new Promise((resolve, reject) => {
-    db.run(
-      'INSERT INTO Carritos (clienteId, productoId, cantidad) VALUES (?, ?, ?)',
-      [clienteId, productoId, cantidad],
-      function (err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(this.lastID);
-        }
-      }
+const agregarProductoAlCarrito = async (clienteId, productoId, cantidad) => {
+  try {
+    await db.query(
+      'INSERT INTO Carritos (clienteId, productoId, cantidad) VALUES ($1, $2, $3)',
+      [clienteId, productoId, cantidad]
     );
-  });
+  } catch (error) {
+    throw error;
+  }
 };
 
 // Obtener carrito de un cliente
-const obtenerCarritoPorCliente = (clienteId) => {
-  return new Promise((resolve, reject) => {
-    db.all(
+const obtenerCarritoPorCliente = async (clienteId) => {
+  try {
+    const { rows } = await db.query(
       `SELECT c.id, p.nombre, p.precio, c.cantidad 
        FROM Carritos c
        JOIN Productos p ON c.productoId = p.id
-       WHERE c.clienteId = ?`,
-      [clienteId],
-      (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
-        }
-      }
+       WHERE c.clienteId = $1`,
+      [clienteId]
     );
-  });
+    return rows;
+  } catch (error) {
+    throw error;
+  }
 };
 
 // Vaciar carrito de un cliente
-const vaciarCarrito = (clienteId) => {
-  return new Promise((resolve, reject) => {
-    db.run('DELETE FROM Carritos WHERE clienteId = ?', [clienteId], (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
+const vaciarCarrito = async (clienteId) => {
+  try {
+    await db.query('DELETE FROM Carritos WHERE clienteId = $1', [clienteId]);
+  } catch (error) {
+    throw error;
+  }
 };
 
 module.exports = {
