@@ -1,79 +1,59 @@
 const db = require('../config/database');
 
-//obtiene todas las categoria
-const getAllCategorias = () => {
-  return new Promise((resolve, reject) => {
-    db.all('SELECT * FROM Categorias', (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows);
-      }
-    });
-  });
+// Obtener todas las categorías
+const getAllCategorias = async () => {
+  try {
+    const { rows } = await db.query('SELECT * FROM Categorias');
+    return rows;
+  } catch (error) {
+    throw error;
+  }
 };
 
-//obtiene una categoria mediante el id
-const getCategoriaById = (id) => {
-  return new Promise((resolve, reject) => {
-    db.get('SELECT * FROM Categorias WHERE id = ?', [id], (err, row) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(row);
-      }
-    });
-  });
+// Obtener categoría por ID
+const getCategoriaById = async (id) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM Categorias WHERE id = $1', [id]);
+    return rows[0];
+  } catch (error) {
+    throw error;
+  }
 };
 
-//Crea un producto y pide el nombre y la descripcion
-const createCategoria = (nombre, descripcion) => {
-  return new Promise((resolve, reject) => {
-    db.run(
-      'INSERT INTO Categorias (nombre, descripcion) VALUES (?, ?)',
-      [nombre, descripcion],
-      function (err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(this.lastID);
-        }
-      }
+// Crear una nueva categoría
+const createCategoria = async (nombre, descripcion) => {
+  try {
+    const { rows } = await db.query(
+      'INSERT INTO Categorias (nombre, descripcion) VALUES ($1, $2) RETURNING id',
+      [nombre, descripcion]
     );
-  });
+    return rows[0].id;
+  } catch (error) {
+    throw error;
+  }
 };
 
-//Actualiza el producto mediante el id de la categoria
-const updateCategoria = (id, nombre, descripcion) => {
-  return new Promise((resolve, reject) => {
-    db.run(
-      'UPDATE Categorias SET nombre = ?, descripcion = ? WHERE id = ?',
-      [nombre, descripcion, id],
-      (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      }
+// Actualizar una categoría
+const updateCategoria = async (id, nombre, descripcion) => {
+  try {
+    await db.query(
+      'UPDATE Categorias SET nombre = $1, descripcion = $2 WHERE id = $3',
+      [nombre, descripcion, id]
     );
-  });
+  } catch (error) {
+    throw error;
+  }
 };
 
-//Elimina una categoria mediante el id
-const deleteCategoria = (id) => {
-  return new Promise((resolve, reject) => {
-    db.run('DELETE FROM Categorias WHERE id = ?', [id], (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
+// Eliminar una categoría
+const deleteCategoria = async (id) => {
+  try {
+    await db.query('DELETE FROM Categorias WHERE id = $1', [id]);
+  } catch (error) {
+    throw error;
+  }
 };
 
-//se exporta los queries
 module.exports = {
   getAllCategorias,
   getCategoriaById,
