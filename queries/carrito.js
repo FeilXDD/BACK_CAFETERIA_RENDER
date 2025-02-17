@@ -12,9 +12,9 @@ const agregarProductoAlCarrito = async (clienteId, productoId, cantidad) => {
   }
 };
 
-// Obtener carrito de un cliente
 const obtenerCarritoPorCliente = async (clienteId) => {
   try {
+    console.log(`Buscando carrito para clienteId: ${clienteId}`);
     const { rows } = await db.query(
       `SELECT c.id, p.nombre, p.precio, c.cantidad 
        FROM Carritos c
@@ -22,8 +22,16 @@ const obtenerCarritoPorCliente = async (clienteId) => {
        WHERE c.clienteId = $1`,
       [clienteId]
     );
+
+    console.log(`Resultados del carrito:`, rows);
+
+    if (!rows || rows.length === 0) {
+      throw new Error('El carrito está vacío.');
+    }
+
     return rows;
   } catch (error) {
+    console.error('Error al obtener el carrito:', error.message);
     throw error;
   }
 };
