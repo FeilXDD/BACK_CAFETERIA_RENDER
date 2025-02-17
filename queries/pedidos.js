@@ -9,6 +9,7 @@ const crearPedido = async (clienteId) => {
     );
     return rows[0].id;
   } catch (error) {
+    console.error('Error al crear pedido:', error.message);
     throw error;
   }
 };
@@ -16,12 +17,16 @@ const crearPedido = async (clienteId) => {
 // Agregar detalles del pedido
 const agregarDetallesPedido = async (pedidoId, detalles) => {
   try {
-    const values = detalles.map(({ productoId, cantidad }) => [pedidoId, productoId, cantidad]);
+    // Construir la consulta dinámica para múltiples inserciones
+    const values = detalles.map(({ productoId, cantidad }, index) => `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`).join(', ');
+    const params = detalles.flatMap(({ productoId, cantidad }) => [pedidoId, productoId, cantidad]);
+
     await db.query(
-      'INSERT INTO DetallesPedidos (pedidoId, productoId, cantidad) VALUES ($1, $2, $3)',
-      values.flat()
+      `INSERT INTO DetallesPedidos (pedidoId, productoId, cantidad) VALUES ${values}`,
+      params
     );
   } catch (error) {
+    console.error('Error al agregar detalles del pedido:', error.message);
     throw error;
   }
 };
@@ -32,6 +37,7 @@ const obtenerPedidosPendientes = async () => {
     const { rows } = await db.query('SELECT * FROM Pedidos WHERE estado = $1', ['pendiente']);
     return rows;
   } catch (error) {
+    console.error('Error al obtener pedidos pendientes:', error.message);
     throw error;
   }
 };
@@ -41,6 +47,7 @@ const marcarPedidoComoCompletado = async (pedidoId) => {
   try {
     await db.query('UPDATE Pedidos SET estado = $1 WHERE id = $2', ['completado', pedidoId]);
   } catch (error) {
+    console.error('Error al marcar pedido como completado:', error.message);
     throw error;
   }
 };
